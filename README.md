@@ -27,14 +27,14 @@ Here is a quick look at how it works:
 
 <img src="/pics/02.png" alt="02" style="zoom:100%;" />
 
-For detailed instructions, go to a UDP LOGGER -> INFLUXDB TUTORIAL .
+For detailed instructions, go to a [UDP LOGGER -> INFLUXDB TUTORIAL](https://github.com/budulinek/easy-loxone-influx/blob/master/1.UDP%20logger.md) .
 
 ### 2. Virtual output
 
 **Pros:**
 
 * Direct connection between Loxone and InfluxDB (no external script or third-party software).
-* Messages sent by Loxone comply to InfluxDB line protocol (https://docs.influxdata.com/influxdb/v1.8/write_protocols/line_protocol_tutorial/).
+* Messages sent by Loxone comply to [InfluxDB line protocol](https://docs.influxdata.com/influxdb/v1.8/write_protocols/line_protocol_tutorial/).
 * Virtual output can send statistics either via UDP or HTTP(S) messages.
 
 **Cons:**
@@ -43,8 +43,6 @@ For detailed instructions, go to a UDP LOGGER -> INFLUXDB TUTORIAL .
 
 Here is a quick look at how it works:
 
-![10](C:\Dokumenty\-- Manuály --\Technické vybavení domu\Loxone\easy-loxone-influx\pics\10.png)
+![10](\pics\10.png)
 
-For detailed instructions, go to a VIRTUAL OPUTPUT -> INFLUXDB TUTORIAL .
-
-### 
+For detailed instructions, go to a [VIRTUAL OPUTPUT -> INFLUXDB TUTORIAL](https://github.com/budulinek/easy-loxone-influx/blob/master/2.Virtual%20output.md) .
