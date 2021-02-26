@@ -5,6 +5,8 @@
 
 This tutorial shows you how to easily send Loxone statistics to InfluxDB 1.8 timescale database through UDP messages. Once you have your data stored InfluxDB, you can visualize them with Grafana.
 
+<img src="/pics/00.png" alt="00" style="zoom:100%;" />
+
 ## How to connect Loxone to InfluxDB?
 
 In contrast to most other solutions and tutorials, this one does not use websockets for sending statistics from Loxone, but simple UDP (or HTTP) messages. It is very easy to setup and use. The configuration of individual measurements and statistics is done through Loxone Config. 
