@@ -43,6 +43,6 @@ For detailed instructions, go to a [UDP LOGGER -> INFLUXDB TUTORIAL](https://git
 
 Here is a quick look at how it works:
 
-![10](\pics\10.png)
+<img src="/pics/10.png" alt="10" style="zoom:100%;" />
 
 For detailed instructions, go to a [VIRTUAL OPUTPUT -> INFLUXDB TUTORIAL](https://github.com/budulinek/easy-loxone-influx/blob/master/2.Virtual%20output.md) .
