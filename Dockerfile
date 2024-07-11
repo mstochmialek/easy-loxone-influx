@@ -4,6 +4,6 @@ WORKDIR /usr/src/app
 
 RUN pip install --no-cache-dir influxdb
 
-COPY . .
+COPY *.py .
 
 CMD [ "python", "./Loxone2InfluxDB.py" ]
