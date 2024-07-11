@@ -5,7 +5,6 @@ import os
 import socket
 import json
 import argparse
-import re
 import logging
 from influxdb import InfluxDBClient
 from datetime import datetime
@@ -41,71 +40,38 @@ def parse_log_data(data, from_zone, to_zone, debug=False):
     """
     logging.debug('Received: %s', data)
 
-    end_timestamp = data.find(b';')
-    end_name = data.find(b';', end_timestamp+1)
-    end_alias = data.find(b':', end_name+1)
-    if end_alias < 0:		# -1 means not found
-        end_alias = end_name
-    end_value = data.find(b';', end_alias+1)
-
-    if end_value < 0:  # ; char not found after value
-        end_tag1 = 0
-        end_value = len(data)
-    else:
-        end_tag1 = data.find(b';', end_value + 1)
-
-    if end_tag1 > 0:
-        end_tag2 = data.find(b';', end_tag1+1)
-    else:
-        end_tag2 = 0
-    if end_tag2 > 0:
-        end_tag3 = data.find(b';', end_tag2+1)
-    else:
-        end_tag3 = 0
-    numeric_const_pattern = r'[-+]? (?: (?: \d* \. \d+ ) | (?: \d+ \.? ) )(?: [Ee] [+-]? \d+ ) ?'
-    rx = re.compile(numeric_const_pattern, re.VERBOSE)
+    chunks = data.split(';')
 
     # Timestamp Extraction
-    parsed_data = {'TimeStamp': data[0:end_timestamp]}
-    parsed_data['TimeStamp'] = parsed_data['TimeStamp'].replace(b' ', b'T')+b'Z'
+    timestamp_str = chunks[0].replace(' ', 'T') + 'Z'
     # Timezone conversion to UTC
-    local = datetime.strptime(parsed_data['TimeStamp'].decode('utf-8'), b'%Y-%m-%dT%H:%M:%SZ'.decode('utf-8'))
-    local = local.replace(tzinfo=from_zone)
-    utc = local.astimezone(to_zone)
-    parsed_data['TimeStamp'] = utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+    timestamp_local = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%SZ')
+    timestamp_utc = timestamp_local.replace(tzinfo=from_zone).astimezone(to_zone)
+    timestamp = timestamp_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    # Name Extraction
-    parsed_data['Name'] = data[end_timestamp+1:end_name]
+    name = chunks[1]
 
-    # Alias Extraction
-    if end_alias != end_name:
-        parsed_data['Name'] = data[end_name+1:end_alias]
+    value_chunks = chunks[2].split(':', 2)
+    has_alias = len(value_chunks) > 1
+    if has_alias:
+        name = value_chunks[0]
+        value = value_chunks[1]
+    else:
+        value = value_chunks[0]
 
-    # Value Extraction
-    parsed_data['Value'] = rx.findall(data[end_alias+1:end_value].decode('utf-8'))[0]
-
-    # Tag_1 Extraction
-    parsed_data['Tag_1'] = data[end_value+1:end_tag1].rstrip()
-
-    # Tag_2 Extraction
-    parsed_data['Tag_2'] = data[end_tag1+1:end_tag2].rstrip()
-
-    # Tag_3 Extraction
-    parsed_data['Tag_3'] = data[end_tag2+1:end_tag3].rstrip()
+    # Tags Extraction
+    tag1 = parse_tag(chunks[3], 'Tag_1') if len(chunks) > 3 else {}
+    tag2 = parse_tag(chunks[4], 'Tag_2') if len(chunks) > 4 else {}
+    tag3 = parse_tag(chunks[5], 'Tag_3') if len(chunks) > 5 else {}
 
     # Create Json body for Influx
     json_body = [
         {
-            "measurement": parsed_data['Name'].decode('utf-8'),
-            "tags": {
-                "Tag_1": parsed_data['Tag_1'].decode('utf-8'),
-                "Tag_2": parsed_data['Tag_2'].decode('utf-8'),
-                "Tag_3": parsed_data['Tag_3'].decode('utf-8'),
-                "Source": "Loxone",
-            },
-            "time": parsed_data['TimeStamp'],   # "2009-11-10T23:00:00Z",
+            "measurement": name,
+            "tags": tag1 | tag2 | tag3 | {"Source": "Loxone"},
+            "time": timestamp,
             "fields": {
-                "value": float(parsed_data['Value'])
+                "value": float(value)
             }
         }
     ]
@@ -114,6 +80,17 @@ def parse_log_data(data, from_zone, to_zone, debug=False):
         logging.debug(json.dumps(json_body, indent=2))
 
     return json_body
+
+
+def parse_tag(tag_str, default_key):
+    tag_chunks = tag_str.split(':', 2)
+    if len(tag_chunks) > 1:
+        tag_key = tag_chunks[0]
+        tag_val = tag_chunks[1]
+    else:
+        tag_key = default_key
+        tag_val = tag_chunks[0]
+    return {tag_key.strip(): tag_val.strip()}
 
 
 def main(host, port, ssl, verify, debug=False):
@@ -146,7 +123,7 @@ def main(host, port, ssl, verify, debug=False):
     # up to the server to sort this out!)
     while True:
         data, addr = udp_sock.recvfrom(1024)
-        json_body_log = parse_log_data(data, from_zone, to_zone, debug)
+        json_body_log = parse_log_data(data.decode('utf-8'), from_zone, to_zone, debug)
         # Write to influx DB
         client.write_points(json_body_log)
 
